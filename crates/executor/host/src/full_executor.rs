@@ -82,6 +82,7 @@ pub trait BlockExecutor<C: ExecutorComponents> {
             info!("Client execution skipped");
         } else {
             // Only execute the program.
+            let execution_start = Instant::now();
             let execute_result = execute_client(
                 client_input.current_block.number,
                 self.client(),
@@ -100,7 +101,9 @@ pub trait BlockExecutor<C: ExecutorComponents> {
                 return Err(HostError::HeaderMismatch(executed_block_hash, input_block_hash))?
             }
 
+            let execution_duration = execution_start.elapsed();
             info!(?executed_block_hash, "Execution successful");
+            println!("Execution duration: {:?}", execution_duration);
 
             hooks
                 .on_execution_end::<C::Primitives>(&client_input.current_block, &execution_report)
@@ -137,6 +140,7 @@ pub trait BlockExecutor<C: ExecutorComponents> {
                 .await?;
 
             info!("Proof successfully generated!");
+            println!("Proving duration: {:?}", proving_duration);
         }
 
         Ok(())
