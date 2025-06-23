@@ -8,6 +8,7 @@ use rsp_client_executor::{
 use rsp_host_executor::HostExecutor;
 use sp1_sdk::{include_elf, ProverClient, SP1Stdin};
 use std::path::PathBuf;
+use std::time::Instant;
 use tracing_subscriber::{
     filter::EnvFilter, fmt, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
@@ -134,7 +135,10 @@ async fn main() -> eyre::Result<()> {
         // Actually generate the proof. It is strongly recommended you use the network prover
         // given the size of these programs.
         println!("Starting proof generation.");
+        let proving_start = Instant::now();
         let proof = client.prove(&pk, &stdin).compressed().run().expect("Proving should work.");
+        let proving_duration = proving_start.elapsed();
+        println!("[SP1 v4.0] Proving duration: {:?}", proving_duration);
         println!("Proof generation finished.");
 
         client.verify(&proof, &vk).expect("proof verification should succeed");
