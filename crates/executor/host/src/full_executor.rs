@@ -121,7 +121,7 @@ pub trait BlockExecutor<C: ExecutorComponents> {
                 .await?;
 
             info!("Proof successfully generated!");
-            println!("Proving duration: {:?}", proving_duration);
+            println!("[SP1v4.2] Proving duration: {:?}", proving_duration);
         }
 
         Ok(())
