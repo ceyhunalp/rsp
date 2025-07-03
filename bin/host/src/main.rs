@@ -138,7 +138,7 @@ async fn main() -> eyre::Result<()> {
         let proving_start = Instant::now();
         let proof = client.prove(&pk, &stdin).compressed().run().expect("Proving should work.");
         let proving_duration = proving_start.elapsed();
-        println!("[SP1 v4.0] Proving duration: {:?}", proving_duration);
+        println!("[SP1v4.0] Proving duration: {:?}", proving_duration);
         println!("Proof generation finished.");
 
         client.verify(&proof, &vk).expect("proof verification should succeed");
