@@ -45,8 +45,16 @@ where
 
     if let Some(cache_dir) = config.cache_dir {
         return Ok(Either::Right(
-            CachedExecutor::try_new(elf, client, hooks, cache_dir, config.chain.id(), config.prove)
-                .await?,
+            CachedExecutor::try_new(
+                elf,
+                client,
+                hooks,
+                cache_dir,
+                config.chain.id(),
+                config.prove,
+                config.proof_mode,
+            )
+            .await?,
         ));
     }
 
@@ -69,6 +77,7 @@ pub trait BlockExecutor<C: ExecutorComponents> {
         client_input: ClientExecutorInput<C::Primitives>,
         hooks: &C::Hooks,
         prove: bool,
+        proof_mode: SP1ProofMode,
     ) -> eyre::Result<()> {
         // Generate the proof.
         // Execute the block inside the zkVM.
@@ -93,7 +102,6 @@ pub trait BlockExecutor<C: ExecutorComponents> {
 
         if prove {
             info!("Starting proof generation");
-
             let proving_start = Instant::now();
             hooks.on_proving_start(client_input.current_block.number).await?;
             let client = self.client();
@@ -101,7 +109,8 @@ pub trait BlockExecutor<C: ExecutorComponents> {
 
             let proof = task::spawn_blocking(move || {
                 client
-                    .prove(pk.as_ref(), &stdin, SP1ProofMode::Compressed)
+                    // .prove(pk.as_ref(), &stdin, SP1ProofMode::Compressed)
+                    .prove(pk.as_ref(), &stdin, proof_mode)
                     .map_err(|err| eyre::eyre!("{err}"))
             })
             .await
@@ -279,7 +288,8 @@ where
             }
         };
 
-        self.process_client(client_input, &self.hooks, self.config.prove).await?;
+        self.process_client(client_input, &self.hooks, self.config.prove, self.config.proof_mode)
+            .await?;
 
         Ok(())
     }
@@ -318,6 +328,7 @@ where
     vk: Arc<SP1VerifyingKey>,
     hooks: C::Hooks,
     prove: bool,
+    proof_mode: SP1ProofMode,
 }
 
 impl<C> CachedExecutor<C>
@@ -331,6 +342,7 @@ where
         cache_dir: PathBuf,
         chain_id: u64,
         prove: bool,
+        proof_mode: SP1ProofMode,
     ) -> eyre::Result<Self> {
         let cloned_client = client.clone();
 
@@ -341,7 +353,16 @@ where
         })
         .await?;
 
-        Ok(Self { cache_dir, chain_id, client, pk: Arc::new(pk), vk: Arc::new(vk), hooks, prove })
+        Ok(Self {
+            cache_dir,
+            chain_id,
+            client,
+            pk: Arc::new(pk),
+            vk: Arc::new(vk),
+            hooks,
+            prove,
+            proof_mode,
+        })
     }
 }
 
@@ -357,7 +378,7 @@ where
         )?
         .ok_or(eyre::eyre!("No cached input found"))?;
 
-        self.process_client(client_input, &self.hooks, self.prove).await
+        self.process_client(client_input, &self.hooks, self.prove, self.proof_mode).await
     }
 
     fn client(&self) -> Arc<C::Prover> {

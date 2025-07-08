@@ -16,7 +16,7 @@ use rsp_host_executor::{
 };
 use rsp_primitives::genesis::Genesis;
 use serde::{Deserialize, Serialize};
-use sp1_sdk::{include_elf, EnvProver, ExecutionReport};
+use sp1_sdk::{include_elf, EnvProver, ExecutionReport, SP1ProofMode};
 use thousands::Separable;
 use url::Url;
 
@@ -34,6 +34,7 @@ async fn test_in_zkvm() {
         cache_dir: None,
         custom_beneficiary: None,
         prove: false,
+        proof_mode: SP1ProofMode::Compressed,
         opcode_tracking: false,
     };
 

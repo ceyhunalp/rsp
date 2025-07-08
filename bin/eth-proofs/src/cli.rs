@@ -2,6 +2,7 @@ use alloy_chains::Chain;
 use clap::Parser;
 use rsp_host_executor::Config;
 use rsp_primitives::genesis::Genesis;
+use sp1_sdk::SP1ProofMode;
 use url::Url;
 
 /// The arguments for the cli.
@@ -53,6 +54,7 @@ impl Args {
             cache_dir: None,
             custom_beneficiary: None,
             prove: !self.execute_only,
+            proof_mode: SP1ProofMode::Compressed,
             opcode_tracking: false,
         };
 

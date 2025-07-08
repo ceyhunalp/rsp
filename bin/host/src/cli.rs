@@ -6,6 +6,7 @@ use alloy_provider::{network::AnyNetwork, Provider, RootProvider};
 use clap::Parser;
 use rsp_host_executor::Config;
 use rsp_primitives::genesis::Genesis;
+use sp1_sdk::SP1ProofMode;
 use url::Url;
 
 /// The arguments for the host executable.
@@ -29,6 +30,9 @@ pub struct HostArgs {
     /// Whether to generate a proof or just execute the block.
     #[clap(long)]
     pub prove: bool,
+
+    #[clap(long)]
+    pub groth: bool,
 
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
@@ -88,7 +92,7 @@ impl HostArgs {
         };
 
         let chain = Chain::from_id(chain_id);
-
+        let proof_mode = if self.groth { SP1ProofMode::Groth16 } else { SP1ProofMode::Compressed };
         let config = Config {
             chain,
             genesis,
@@ -96,6 +100,7 @@ impl HostArgs {
             cache_dir: self.cache_dir.clone(),
             custom_beneficiary: self.custom_beneficiary,
             prove: self.prove,
+            proof_mode,
             opcode_tracking: self.opcode_tracking,
         };
 
