@@ -31,6 +31,9 @@ pub struct HostArgs {
     #[clap(long)]
     pub prove: bool,
 
+    #[clap(long)]
+    pub groth: bool,
+
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
     #[clap(long)]
@@ -90,14 +93,14 @@ impl HostArgs {
         };
 
         let chain = Chain::from_id(chain_id);
-
+        let pm = if self.groth { SP1ProofMode::Groth16 } else { SP1ProofMode::Compressed };
         let config = Config {
             chain,
             genesis,
             rpc_url,
             cache_dir: self.cache_dir.clone(),
             custom_beneficiary: self.custom_beneficiary,
-            prove_mode: self.prove.then_some(SP1ProofMode::Compressed),
+            prove_mode: self.prove.then_some(pm),
             skip_client_execution: false,
             opcode_tracking: self.opcode_tracking,
         };
