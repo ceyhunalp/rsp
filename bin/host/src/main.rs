@@ -30,6 +30,9 @@ struct HostArgs {
     /// Whether to generate a proof or just execute the block.
     #[clap(long)]
     prove: bool,
+
+    #[clap(long)]
+    groth: bool,
     /// Optional path to the directory containing cached client input. A new cache file will be
     /// created from RPC data if it doesn't already exist.
     #[clap(long)]
@@ -135,13 +138,21 @@ async fn main() -> eyre::Result<()> {
         // Actually generate the proof. It is strongly recommended you use the network prover
         // given the size of these programs.
         println!("Starting proof generation.");
-        let proving_start = Instant::now();
-        let proof = client.prove(&pk, &stdin).compressed().run().expect("Proving should work.");
-        let proving_duration = proving_start.elapsed();
-        println!("[SP1v4.0] Proving duration: {:?}", proving_duration);
-        println!("Proof generation finished.");
-
-        client.verify(&proof, &vk).expect("proof verification should succeed");
+        if args.groth {
+            let proving_start = Instant::now();
+            let proof = client.prove(&pk, &stdin).groth16().run().expect("Proving should work.");
+            let proving_duration = proving_start.elapsed();
+            println!("[SP1v4.0-Groth] Proving duration: {:?}", proving_duration);
+            println!("Proof generation finished.");
+            client.verify(&proof, &vk).expect("proof verification should succeed");
+        } else {
+            let proving_start = Instant::now();
+            let proof = client.prove(&pk, &stdin).compressed().run().expect("Proving should work.");
+            let proving_duration = proving_start.elapsed();
+            println!("[SP1v4.0-Compressed] Proving duration: {:?}", proving_duration);
+            println!("Proof generation finished.");
+            client.verify(&proof, &vk).expect("proof verification should succeed");
+        }
     }
 
     Ok(())
