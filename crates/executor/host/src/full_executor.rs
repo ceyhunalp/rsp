@@ -119,6 +119,10 @@ pub trait BlockExecutor<C: ExecutorComponents> {
             let proving_duration = proving_start.elapsed();
             let proof_bytes = bincode::serialize(&proof.proof).unwrap();
 
+            let verification_start = Instant::now();
+            self.client().verify(&proof, &self.vk()).expect("failed to verify proof");
+            let verification_duration = verification_start.elapsed();
+
             hooks
                 .on_proving_end(
                     client_input.current_block.number,
@@ -131,6 +135,8 @@ pub trait BlockExecutor<C: ExecutorComponents> {
 
             info!("Proof successfully generated!");
             println!("[SP1v4.2] Proving duration: {:?}", proving_duration);
+            println!("[SP1v4.2] Verification duration: {:?}", verification_duration);
+            println!("Proof size is {}", proof_bytes.len());
         }
 
         Ok(())
