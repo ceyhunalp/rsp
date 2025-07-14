@@ -12,7 +12,7 @@ use reth_primitives_traits::NodePrimitives;
 use rsp_client_executor::io::{ClientExecutorInput, CommittedHeader};
 use rsp_rpc_db::RpcDb;
 use serde::de::DeserializeOwned;
-use sp1_prover::components::CpuProverComponents;
+use sp1_prover::{components::CpuProverComponents, verify};
 use sp1_sdk::{ExecutionReport, Prover, SP1ProvingKey, SP1PublicValues, SP1Stdin, SP1VerifyingKey};
 use tokio::{task, time::sleep};
 use tracing::{info, info_span, warn};
@@ -98,7 +98,7 @@ pub trait BlockExecutor<C: ExecutorComponents> {
             let input_block_hash = client_input.current_block.header.hash_slow();
 
             if input_block_hash != executed_block_hash {
-                return Err(HostError::HeaderMismatch(executed_block_hash, input_block_hash))?
+                return Err(HostError::HeaderMismatch(executed_block_hash, input_block_hash))?;
             }
 
             let execution_duration = execution_start.elapsed();
@@ -129,6 +129,10 @@ pub trait BlockExecutor<C: ExecutorComponents> {
             let proving_duration = proving_start.elapsed();
             let proof_bytes = bincode::serialize(&proof.proof).unwrap();
 
+            let verification_start = Instant::now();
+            self.client().verify(&proof, &self.vk()).expect("failed to verify proof");
+            let verification_duration = verification_start.elapsed();
+
             hooks
                 .on_proving_end(
                     client_input.current_block.number,
@@ -141,6 +145,8 @@ pub trait BlockExecutor<C: ExecutorComponents> {
 
             info!("Proof successfully generated!");
             println!("[SP1v5] Proving duration: {:?}", proving_duration);
+            println!("[SP1v5] Verification duration: {:?}", verification_duration);
+            println!("Proof size is {}", proof_bytes.len());
         }
 
         Ok(())
